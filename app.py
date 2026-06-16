@@ -12,6 +12,23 @@ def index():
 
 # ── Fitur 1: DFA Simulator ──────────────────────────────────────────────────
 
+@app.route('/api/dfa/validate', methods=['POST'])
+def dfa_validate():
+    """Endpoint untuk memvalidasi aturan DFA sebelum simulasi."""
+    data = request.json
+    try:
+        dfa = DFA(
+            states=data['states'],
+            alphabet=data['alphabet'],
+            transitions=data['transitions'],
+            start_state=data['start_state'],
+            accept_states=data['accept_states']
+        )
+        result = dfa.validate()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
 @app.route('/api/dfa/test', methods=['POST'])
 def dfa_test():
     data = request.json
@@ -23,12 +40,25 @@ def dfa_test():
             start_state=data['start_state'],
             accept_states=data['accept_states']
         )
+
+        # Validasi aturan terlebih dahulu
+        validation = dfa.validate()
+        if not validation['valid']:
+            return jsonify({
+                'error': 'Aturan DFA tidak valid',
+                'validation_errors': validation['errors']
+            }), 400
+
         string = data['string']
-        accepted, path = dfa.simulate(string)
+        result = dfa.simulate_verbose(string)
+
         return jsonify({
-            'accepted': accepted,
-            'path': path,
-            'message': f'String "{string}" {"diterima ✓" if accepted else "ditolak ✗"}'
+            'accepted': result['accepted'],
+            'result': result['result'],
+            'path': result['path'],
+            'history': result['history'],
+            'final_state': result['final_state'],
+            'message': f'String "{string}" {"diterima ✓" if result["accepted"] else "ditolak ✗"}'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
