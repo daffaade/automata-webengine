@@ -34,6 +34,14 @@ let selectedVisualItem = {
   value: null,
 };
 
+function getAlphabet() {
+  return document
+    .getElementById("visualAlphabet")
+    .value.split(",")
+    .map((item) => item.trim())
+    .filter((item) => item !== "");
+}
+
 function addVisualState() {
   const id = `q${stateCounter}`;
   stateCounter++;
@@ -113,9 +121,20 @@ function addVisualTransition() {
   const from = document.getElementById("transitionFrom").value;
   const to = document.getElementById("transitionTo").value;
   const symbol = document.getElementById("transitionSymbol").value.trim();
+  const alphabet = getAlphabet();
 
   if (!from || !to || symbol === "") {
     alert("Isi From, Symbol, dan To terlebih dahulu.");
+    return;
+  }
+
+  if (alphabet.length === 0) {
+    alert("Isi Alphabet terlebih dahulu, contoh: a,b atau 0,1.");
+    return;
+  }
+
+  if (!alphabet.includes(symbol)) {
+    alert(`Simbol "${symbol}" tidak ada dalam alphabet.`);
     return;
   }
 
@@ -390,6 +409,24 @@ function drawCurvedTransition(
 }
 
 function drawLoopTransition(svg, x, y, symbol, transitionIndex) {
+  const transition = visualTransitions[transitionIndex];
+
+  const loopSymbols = visualTransitions
+    .filter((item) => {
+      return item.from === transition.from && item.to === transition.to;
+    })
+    .map((item) => item.symbol);
+
+  const firstLoopIndex = visualTransitions.findIndex((item) => {
+    return item.from === transition.from && item.to === transition.to;
+  });
+
+  if (transitionIndex !== firstLoopIndex) {
+    return;
+  }
+
+  const labelText = loopSymbols.join(",");
+
   const loopPath = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "path",
@@ -406,7 +443,9 @@ function drawLoopTransition(svg, x, y, symbol, transitionIndex) {
 
   if (
     selectedVisualItem.type === "transition" &&
-    selectedVisualItem.value === transitionIndex
+    loopSymbols.includes(visualTransitions[selectedVisualItem.value]?.symbol) &&
+    visualTransitions[selectedVisualItem.value]?.from === transition.from &&
+    visualTransitions[selectedVisualItem.value]?.to === transition.to
   ) {
     loopPath.classList.add("selected");
   }
@@ -416,7 +455,7 @@ function drawLoopTransition(svg, x, y, symbol, transitionIndex) {
 
     selectedVisualItem = {
       type: "transition",
-      value: transitionIndex,
+      value: firstLoopIndex,
     };
 
     renderVisualGraph();
@@ -424,9 +463,8 @@ function drawLoopTransition(svg, x, y, symbol, transitionIndex) {
 
   svg.appendChild(loopPath);
 
-  addTransitionText(svg, x, y - 90, symbol, transitionIndex);
+  addTransitionText(svg, x, y - 90, labelText, firstLoopIndex);
 }
-
 function addTransitionText(svg, x, y, text, transitionIndex) {
   const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
 
@@ -461,14 +499,16 @@ function runVisualDFA() {
   clearRunHighlight();
 
   const startState = document.getElementById("visualStartState").value;
-
-  const alphabet = document
-    .getElementById("visualAlphabet")
-    .value.split(",")
-    .map((item) => item.trim())
-    .filter((item) => item !== "");
-
+  const alphabet = getAlphabet();
   const inputString = document.getElementById("visualInputString").value.trim();
+
+  if (alphabet.length === 0) {
+    document.getElementById("visualDfaOutput").innerHTML = `
+      <div class="result reject">Alphabet belum diisi</div>
+      <p>Isi alphabet terlebih dahulu, contoh: a,b atau 0,1.</p>
+    `;
+    return;
+  }
 
   if (!startState) {
     document.getElementById("visualDfaOutput").innerHTML = `

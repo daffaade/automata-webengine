@@ -49,10 +49,17 @@
 
             <button onclick="addVisualState()">+ Add State</button>
 
-            <!-- Start state disembunyikan, tetap dipakai JS -->
-            <select id="visualStartState" hidden></select>
+            <label>Alphabet</label>
+            <input
+              id="visualAlphabet"
+              value="a,b"
+              placeholder="Contoh: a,b atau 0,1"
+            />
 
-            <label>Final States</label>
+            <label>Start State</label>
+            <select id="visualStartState"></select>
+
+            <label>Accept States</label>
             <div id="finalStateList" class="checkbox-list">
               Belum ada state.
             </div>
@@ -68,7 +75,7 @@
             <select id="transitionTo"></select>
 
             <label>Symbol</label>
-            <input id="transitionSymbol" placeholder="0 atau 1" />
+            <input id="transitionSymbol" placeholder="Contoh: a atau b" />
 
             <button onclick="addVisualTransition()">Add Transition</button>
 
@@ -76,11 +83,8 @@
 
             <h3>Test DFA</h3>
 
-            <!-- Alphabet disembunyikan, default 0,1 -->
-            <input id="visualAlphabet" value="0,1" hidden />
-
             <label>Input String</label>
-            <input id="visualInputString" placeholder="011" />
+            <input id="visualInputString" placeholder="Contoh: aab" />
 
             <button onclick="runVisualDFA()">Run DFA</button>
 
