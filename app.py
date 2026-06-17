@@ -59,7 +59,7 @@ def dfa_test():
             'path': result['path'],
             'history': result['history'],
             'final_state': result['final_state'],
-            'message': f'String "{string}" {"diterima ✓" if result["accepted"] else "ditolak ✗"}'
+            'message': f'String "{string}" {"diterima" if result["accepted"] else "ditolak"}'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -91,7 +91,7 @@ def nfa_test():
         accepted = nfa.simulate(string)
         return jsonify({
             'accepted': accepted,
-            'message': f'String "{string}" {"diterima ✓" if accepted else "ditolak ✗"}'
+            'message': f'String "{string}" {"diterima" if accepted else "ditolak"}'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -115,7 +115,7 @@ def dfa_minimize():
             'steps': steps,
             'original_states': len(dfa.states),
             'minimized_states': len(min_dfa.states),
-            'message': f'Berhasil! Dari {len(dfa.states)} state → {len(min_dfa.states)} state'
+            'message': f'Berhasil! Dari {len(dfa.states)} state -> {len(min_dfa.states)} state'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -144,6 +144,7 @@ def dfa_equivalence():
     """
     data = request.json
     try:
+        # Bangun kedua DFA
         dfa1 = DFA(
             states=data['dfa1']['states'],
             alphabet=data['dfa1']['alphabet'],
