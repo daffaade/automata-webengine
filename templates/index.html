@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Automata Web Engine — Simulator DFA, Konversi Regex ke NFA, Minimisasi DFA, dan Pemeriksaan Ekuivalensi DFA.">
+    <title>Automata Web Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- ═══ Header ═══ -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">&#x2699;</span>
+                <h1>Automata <span class="accent">Engine</span></h1>
+            </div>
+            <p class="subtitle">Simulator &amp; Toolset Teori Bahasa Formal</p>
+        </div>
+    </header>
+
+    <!-- ═══ Navigation Tabs ═══ -->
+    <nav class="tabs" id="nav-tabs">
+        <button class="tab active" data-tab="dfa-sim" id="tab-dfa-sim">
+            <span class="tab-icon">&#9654;</span> DFA Simulator
+        </button>
+        <button class="tab" data-tab="regex-nfa" id="tab-regex-nfa">
+            <span class="tab-icon">&#8644;</span> Regex &rarr; NFA
+        </button>
+        <button class="tab" data-tab="dfa-min" id="tab-dfa-min">
+            <span class="tab-icon">&#8659;</span> Minimisasi DFA
+        </button>
+        <button class="tab" data-tab="dfa-equiv" id="tab-dfa-equiv">
+            <span class="tab-icon">&#8801;</span> Ekuivalensi DFA
+        </button>
+    </nav>
+
+    <main class="main-content" id="main-content">
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TAB 1: DFA Simulator
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-panel active" id="panel-dfa-sim">
+            <div class="panel-header">
+                <h2>Simulasi DFA</h2>
+                <p>Masukkan definisi DFA dan uji string input.</p>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Definisi DFA</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="dfa-sim-states">States <span class="hint">(pisah koma)</span></label>
+                        <input type="text" id="dfa-sim-states" placeholder="q0, q1, q2">
+                    </div>
+                    <div class="form-group">
+                        <label for="dfa-sim-alphabet">Alphabet <span class="hint">(pisah koma)</span></label>
+                        <input type="text" id="dfa-sim-alphabet" placeholder="a, b">
+                    </div>
+                    <div class="form-group">
+                        <label for="dfa-sim-start">Start State</label>
+                        <input type="text" id="dfa-sim-start" placeholder="q0">
+                    </div>
+                    <div class="form-group">
+                        <label for="dfa-sim-accept">Accept States <span class="hint">(pisah koma)</span></label>
+                        <input type="text" id="dfa-sim-accept" placeholder="q2">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label for="dfa-sim-transitions">Transisi <span class="hint">(satu per baris: state,simbol=next_state)</span></label>
+                    <textarea id="dfa-sim-transitions" rows="5" placeholder="q0,a=q1&#10;q0,b=q0&#10;q1,a=q1&#10;q1,b=q2&#10;q2,a=q1&#10;q2,b=q0"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Uji String</h3>
+                <div class="form-row">
+                    <input type="text" id="dfa-sim-string" placeholder="Masukkan string, cth: aab">
+                    <button class="btn btn-primary" id="btn-dfa-sim-test" onclick="testDFA()">Simulasi</button>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadPreset('dfa-sim', 'ends-ab')">Contoh: Berakhiran "ab"</button>
+            </div>
+
+            <div class="result-panel hidden" id="result-dfa-sim">
+                <div class="result-header" id="result-dfa-sim-header"></div>
+                <div class="result-body" id="result-dfa-sim-body"></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TAB 2: Regex → NFA
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-panel" id="panel-regex-nfa">
+            <div class="panel-header">
+                <h2>Konversi Regex ke NFA</h2>
+                <p>Masukkan Regular Expression untuk menghasilkan NFA ekuivalen.</p>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Regular Expression</h3>
+                <div class="form-row">
+                    <input type="text" id="regex-input" placeholder="(a|b)*ab">
+                    <button class="btn btn-primary" id="btn-regex-convert" onclick="convertRegex()">Konversi</button>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadPreset('regex', 'ab-star')">Contoh: (a|b)*ab</button>
+            </div>
+
+            <div class="result-panel hidden" id="result-regex">
+                <div class="result-header" id="result-regex-header"></div>
+                <div class="result-body" id="result-regex-body"></div>
+            </div>
+
+            <div class="card hidden" id="nfa-test-section">
+                <h3 class="card-title">Uji String pada NFA</h3>
+                <div class="form-row">
+                    <input type="text" id="nfa-test-string" placeholder="Masukkan string">
+                    <button class="btn btn-primary" id="btn-nfa-test" onclick="testNFA()">Uji</button>
+                </div>
+            </div>
+
+            <div class="result-panel hidden" id="result-nfa-test">
+                <div class="result-header" id="result-nfa-test-header"></div>
+                <div class="result-body" id="result-nfa-test-body"></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TAB 3: Minimisasi DFA
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-panel" id="panel-dfa-min">
+            <div class="panel-header">
+                <h2>Minimisasi DFA</h2>
+                <p>Masukkan DFA untuk diminimalkan menggunakan algoritma Table-Filling.</p>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Definisi DFA</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="dfa-min-states">States</label>
+                        <input type="text" id="dfa-min-states" placeholder="q0, q1, q2, q3, q4">
+                    </div>
+                    <div class="form-group">
+                        <label for="dfa-min-alphabet">Alphabet</label>
+                        <input type="text" id="dfa-min-alphabet" placeholder="a, b">
+                    </div>
+                    <div class="form-group">
+                        <label for="dfa-min-start">Start State</label>
+                        <input type="text" id="dfa-min-start" placeholder="q0">
+                    </div>
+                    <div class="form-group">
+                        <label for="dfa-min-accept">Accept States</label>
+                        <input type="text" id="dfa-min-accept" placeholder="q3">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label for="dfa-min-transitions">Transisi</label>
+                    <textarea id="dfa-min-transitions" rows="6" placeholder="q0,a=q1&#10;q0,b=q2&#10;q1,a=q1&#10;q1,b=q3&#10;q2,a=q1&#10;q2,b=q3&#10;q3,a=q1&#10;q3,b=q3&#10;q4,a=q4&#10;q4,b=q4"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="btn-dfa-minimize" onclick="minimizeDFA()">Minimisasi</button>
+                    <button class="btn btn-secondary btn-sm" onclick="loadPreset('dfa-min', 'redundant')">Contoh: DFA Redundan</button>
+                </div>
+            </div>
+
+            <div class="result-panel hidden" id="result-dfa-min">
+                <div class="result-header" id="result-dfa-min-header"></div>
+                <div class="result-body" id="result-dfa-min-body"></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TAB 4: Ekuivalensi DFA
+             ═══════════════════════════════════════════════════════════════════ -->
+        <section class="tab-panel" id="panel-dfa-equiv">
+            <div class="panel-header">
+                <h2>Pemeriksaan Ekuivalensi Dua DFA</h2>
+                <p>Masukkan dua DFA untuk memeriksa apakah keduanya menerima bahasa yang sama.</p>
+            </div>
+
+            <div class="dual-panel">
+                <!-- DFA 1 -->
+                <div class="card dfa-card">
+                    <h3 class="card-title"><span class="badge badge-1">DFA 1</span></h3>
+                    <div class="form-grid-compact">
+                        <div class="form-group">
+                            <label for="eq-dfa1-states">States</label>
+                            <input type="text" id="eq-dfa1-states" placeholder="q0, q1, q2">
+                        </div>
+                        <div class="form-group">
+                            <label for="eq-dfa1-alphabet">Alphabet</label>
+                            <input type="text" id="eq-dfa1-alphabet" placeholder="a, b">
+                        </div>
+                        <div class="form-group">
+                            <label for="eq-dfa1-start">Start State</label>
+                            <input type="text" id="eq-dfa1-start" placeholder="q0">
+                        </div>
+                        <div class="form-group">
+                            <label for="eq-dfa1-accept">Accept States</label>
+                            <input type="text" id="eq-dfa1-accept" placeholder="q2">
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="eq-dfa1-transitions">Transisi</label>
+                        <textarea id="eq-dfa1-transitions" rows="5" placeholder="q0,a=q1&#10;q0,b=q0&#10;q1,a=q1&#10;q1,b=q2&#10;q2,a=q1&#10;q2,b=q0"></textarea>
+                    </div>
+                </div>
+
+                <!-- DFA 2 -->
+                <div class="card dfa-card">
+                    <h3 class="card-title"><span class="badge badge-2">DFA 2</span></h3>
+                    <div class="form-grid-compact">
+                        <div class="form-group">
+                            <label for="eq-dfa2-states">States</label>
+                            <input type="text" id="eq-dfa2-states" placeholder="s0, s1, s2">
+                        </div>
+                        <div class="form-group">
+                            <label for="eq-dfa2-alphabet">Alphabet</label>
+                            <input type="text" id="eq-dfa2-alphabet" placeholder="a, b">
+                        </div>
+                        <div class="form-group">
+                            <label for="eq-dfa2-start">Start State</label>
+                            <input type="text" id="eq-dfa2-start" placeholder="s0">
+                        </div>
+                        <div class="form-group">
+                            <label for="eq-dfa2-accept">Accept States</label>
+                            <input type="text" id="eq-dfa2-accept" placeholder="s2">
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="eq-dfa2-transitions">Transisi</label>
+                        <textarea id="eq-dfa2-transitions" rows="5" placeholder="s0,a=s1&#10;s0,b=s0&#10;s1,a=s1&#10;s1,b=s2&#10;s2,a=s1&#10;s2,b=s0"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="center-actions">
+                <button class="btn btn-primary btn-lg" id="btn-check-equiv" onclick="checkEquivalence()">
+                    <span class="btn-icon">&#8801;</span> Periksa Ekuivalensi
+                </button>
+                <div class="preset-group">
+                    <button class="btn btn-secondary btn-sm" onclick="loadPreset('equiv', 'same-language')">Contoh: Ekuivalen</button>
+                    <button class="btn btn-secondary btn-sm" onclick="loadPreset('equiv', 'diff-language')">Contoh: Tidak Ekuivalen</button>
+                </div>
+            </div>
+
+            <div class="result-panel hidden" id="result-equiv">
+                <div class="result-header" id="result-equiv-header"></div>
+                <div class="result-body" id="result-equiv-body"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="footer" id="footer">
+        <p>Automata Web Engine &mdash; Proyek Teori Bahasa &amp; Automata</p>
+    </footer>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
