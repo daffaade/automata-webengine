@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoLab - Automata Simulator</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <div class="sidebar">
+      <div class="brand">
+        <h1>AutoLab</h1>
+        <p>Automata Simulator</p>
+      </div>
+
+      <nav class="nav-menu">
+        <a class="active" data-page="dfa" onclick="showPage('dfa')">
+          DFA Simulator
+        </a>
+
+        <a data-page="regex" onclick="showPage('regex')"> Regex to NFA </a>
+
+        <a data-page="minimize" onclick="showPage('minimize')">
+          DFA Minimization
+        </a>
+
+        <a data-page="equivalence" onclick="showPage('equivalence')">
+          DFA Equivalence
+        </a>
+      </nav>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="content">
+      <!-- DFA VISUAL SIMULATOR -->
+      <section id="dfa" class="page active-page">
+        <h2>DFA Visual Simulator</h2>
+
+        <div class="visual-layout">
+          <!-- CONTROL PANEL -->
+          <div class="panel tool-panel">
+            <h3>Control Panel</h3>
+
+            <button onclick="addVisualState()">+ Add State</button>
+
+            <label>Alphabet</label>
+            <input
+              id="visualAlphabet"
+              value="a,b"
+              placeholder="Contoh: a,b atau 0,1"
+            />
+
+            <label>Start State</label>
+            <select id="visualStartState"></select>
+
+            <label>Accept States</label>
+            <div id="finalStateList" class="checkbox-list">
+              Belum ada state.
+            </div>
+
+            <hr />
+
+            <h3>Add Transition</h3>
+
+            <label>From</label>
+            <select id="transitionFrom"></select>
+
+            <label>To</label>
+            <select id="transitionTo"></select>
+
+            <label>Symbol</label>
+            <input id="transitionSymbol" placeholder="Contoh: a atau b" />
+
+            <button onclick="addVisualTransition()">Add Transition</button>
+
+            <hr />
+
+            <h3>Test DFA</h3>
+
+            <label>Input String</label>
+            <input id="visualInputString" placeholder="Contoh: aab" />
+
+            <button onclick="runVisualDFA()">Run DFA</button>
+
+            <button class="secondary-btn" onclick="resetVisualDFA()">
+              Reset
+            </button>
+          </div>
+
+          <!-- GRAPH + OUTPUT PANEL -->
+          <div class="panel graph-panel">
+            <h3>DFA Graph Editor</h3>
+
+            <div id="graphArea" class="graph-area">
+              <div id="graphCanvas" class="graph-canvas">
+                <svg id="transitionSvg"></svg>
+                <div id="stateLayer"></div>
+              </div>
+            </div>
+
+            <div class="graph-output">
+              <h3>Output</h3>
+
+              <div id="visualDfaOutput" class="output-box">
+                Hasil simulasi akan muncul di sini.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REGEX TO NFA -->
+      <section id="regex" class="page">
+        <h2>Regex to NFA</h2>
+
+        <div class="grid">
+          <div class="panel">
+            <h3>Input Regex</h3>
+
+            <label>Regular Expression</label>
+            <input id="regexInput" placeholder="(a|b)*abb" />
+
+            <label>Test String</label>
+            <input id="regexString" placeholder="abb" />
+
+            <button onclick="runRegex()">Generate NFA</button>
+          </div>
+
+          <div class="panel">
+            <h3>Output</h3>
+
+            <div id="regexOutput" class="output-box empty-output">
+              Hasil NFA akan muncul di sini.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DFA MINIMIZATION -->
+      <section id="minimize" class="page">
+        <h2>DFA Minimization</h2>
+
+        <div class="grid">
+          <div class="panel">
+            <h3>Input DFA</h3>
+
+            <label>States</label>
+            <input id="minStates" placeholder="q0,q1,q2,q3" />
+
+            <label>Final States</label>
+            <input id="minFinal" placeholder="q2,q3" />
+
+            <label>Transitions</label>
+            <textarea
+              id="minTransitions"
+              placeholder="q0,0,q1&#10;q0,1,q2"
+            ></textarea>
+
+            <button onclick="runMinimize()">Minimize DFA</button>
+          </div>
+
+          <div class="panel">
+            <h3>Output</h3>
+
+            <div id="minimizeOutput" class="output-box">
+              DFA minimal akan muncul di sini.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DFA EQUIVALENCE -->
+      <section id="equivalence" class="page">
+        <h2>DFA Equivalence</h2>
+
+        <div class="grid">
+          <div class="panel">
+            <h3>DFA 1</h3>
+
+            <textarea
+              id="dfaOne"
+              placeholder="Masukkan data DFA pertama"
+            ></textarea>
+          </div>
+
+          <div class="panel">
+            <h3>DFA 2</h3>
+
+            <textarea
+              id="dfaTwo"
+              placeholder="Masukkan data DFA kedua"
+            ></textarea>
+          </div>
+        </div>
+
+        <button class="check-btn" onclick="runEquivalence()">
+          Check Equivalence
+        </button>
+
+        <div id="equivalenceOutput" class="panel result-panel">
+          Hasil equivalence akan muncul di sini.
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
