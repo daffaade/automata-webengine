@@ -45,6 +45,48 @@ class NFA:
 
         return bool(current_states & set(self.accept_states))
 
+    def simulate_verbose(self, input_string):
+        """
+        Jalankan NFA pada input_string dengan mencatat riwayat transisi set state aktif.
+        Return: dict berisi status penerimaan, final states, dan history
+        """
+        current_states = self.epsilon_closure({self.start_state})
+        history = []
+        rejected_early = False
+
+        for symbol in input_string:
+            if symbol not in self.alphabet and symbol != EPSILON:
+                history.append({
+                    'current_states': sorted(list(current_states)),
+                    'symbol': symbol,
+                    'next_states': [],
+                    'error': f'Simbol "{symbol}" tidak ada dalam alphabet'
+                })
+                rejected_early = True
+                break
+
+            moved = self.move(current_states, symbol)
+            next_states = self.epsilon_closure(moved)
+
+            history.append({
+                'current_states': sorted(list(current_states)),
+                'symbol': symbol,
+                'next_states': sorted(list(next_states))
+            })
+            current_states = next_states
+
+        accepted = False
+        if not rejected_early:
+            accepted = bool(current_states & set(self.accept_states))
+
+        return {
+            'accepted': accepted,
+            'result': 'Accepted' if accepted else 'Rejected',
+            'final_states': sorted(list(current_states)),
+            'history': history,
+            'input_string': input_string
+        }
+
     def to_dict(self):
         """Konversi ke format dict untuk JSON response dan visualisasi"""
         flat_trans = {}
