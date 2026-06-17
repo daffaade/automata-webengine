@@ -134,13 +134,13 @@ def dfa_equivalence():
       }
 
     Mengembalikan:
-      - equivalent   : bool
-      - reason       : str  — penjelasan hasil
-      - witness      : str | null — string pembeda (jika tidak ekuivalen)
-      - steps        : list — langkah-langkah product construction
-      - visited_pairs: list — pasangan state yang dikunjungi
-      - dfa1_info    : dict — ringkasan DFA 1
-      - dfa2_info    : dict — ringkasan DFA 2
+      - equivalent    : bool
+      - reason        : str   — penjelasan hasil
+      - witness       : str | null — string pembeda (jika tidak ekuivalen)
+      - steps         : list  — langkah-langkah product construction
+      - visited_pairs : list  — pasangan state yang dikunjungi
+      - dfa1_info     : dict  — ringkasan DFA 1
+      - dfa2_info     : dict  — ringkasan DFA 2
     """
     data = request.json
     try:
