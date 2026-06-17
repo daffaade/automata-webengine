@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, jsonify
 from automata.dfa import DFA
 from automata.nfa import NFA
 from automata.regex_to_nfa import regex_to_nfa
-from automata.minimizer import minimize_dfa, check_equivalence
+from automata.minimizer import minimize_dfa
+from automata.equivalence import check_equivalence, get_equivalence_details
 
 app = Flask(__name__)
 
@@ -123,15 +124,64 @@ def dfa_minimize():
 
 @app.route('/api/dfa/equivalence', methods=['POST'])
 def dfa_equivalence():
+    """
+    Endpoint untuk memeriksa ekuivalensi dua DFA.
+
+    Menerima JSON body:
+      {
+        "dfa1": { states, alphabet, transitions, start_state, accept_states },
+        "dfa2": { states, alphabet, transitions, start_state, accept_states }
+      }
+
+    Mengembalikan:
+      - equivalent    : bool
+      - reason        : str   — penjelasan hasil
+      - witness       : str | null — string pembeda (jika tidak ekuivalen)
+      - steps         : list  — langkah-langkah product construction
+      - visited_pairs : list  — pasangan state yang dikunjungi
+      - dfa1_info     : dict  — ringkasan DFA 1
+      - dfa2_info     : dict  — ringkasan DFA 2
+    """
     data = request.json
     try:
-        dfa1 = DFA(**data['dfa1'])
-        dfa2 = DFA(**data['dfa2'])
-        equivalent, reason = check_equivalence(dfa1, dfa2)
+        dfa1 = DFA(
+            states=data['dfa1']['states'],
+            alphabet=data['dfa1']['alphabet'],
+            transitions=data['dfa1']['transitions'],
+            start_state=data['dfa1']['start_state'],
+            accept_states=data['dfa1']['accept_states']
+        )
+        dfa2 = DFA(
+            states=data['dfa2']['states'],
+            alphabet=data['dfa2']['alphabet'],
+            transitions=data['dfa2']['transitions'],
+            start_state=data['dfa2']['start_state'],
+            accept_states=data['dfa2']['accept_states']
+        )
+
+        # Validasi kedua DFA
+        v1 = dfa1.validate()
+        v2 = dfa2.validate()
+        errors = []
+        if not v1['valid']:
+            errors.append(f'DFA 1 tidak valid: {"; ".join(v1["errors"])}')
+        if not v2['valid']:
+            errors.append(f'DFA 2 tidak valid: {"; ".join(v2["errors"])}')
+        if errors:
+            return jsonify({'error': '; '.join(errors)}), 400
+
+        # Jalankan pemeriksaan ekuivalensi detail
+        details = get_equivalence_details(dfa1, dfa2)
+
         return jsonify({
-            'equivalent': equivalent,
-            'reason': reason,
-            'message': f'Kedua DFA {"EKUIVALEN ✓" if equivalent else "TIDAK EKUIVALEN ✗"}'
+            'equivalent': details['is_equivalent'],
+            'reason': details['reason'],
+            'witness': details['witness'],
+            'steps': details['steps'],
+            'visited_pairs': details['visited_pairs'],
+            'dfa1_info': details['dfa1_info'],
+            'dfa2_info': details['dfa2_info'],
+            'message': f'Kedua DFA {"EKUIVALEN" if details["is_equivalent"] else "TIDAK EKUIVALEN"}'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400

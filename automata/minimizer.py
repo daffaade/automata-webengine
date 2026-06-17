@@ -150,57 +150,8 @@ def _split_partition(group, all_partitions, transitions, alphabet):
 
     return [frozenset(g) for g in groups.values()]
 
-def check_equivalence(dfa1, dfa2):
-    """
-    Cek apakah dua DFA ekuivalen.
-    Metode: minimisasi keduanya lalu bandingkan strukturnya.
-    Return: (is_equivalent: bool, reason: str)
-    """
-    # Pastikan alphabet sama
-    if set(dfa1.alphabet) != set(dfa2.alphabet):
-        return False, f'Alphabet berbeda: {sorted(dfa1.alphabet)} vs {sorted(dfa2.alphabet)}'
-
-    # Gunakan product construction untuk cek ekuivalensi
-    # Dua DFA ekuivalen jika tidak ada string yang diterima satu tapi ditolak lainnya
-    # Cek dengan BFS pada product automaton
-    queue = [(dfa1.start_state, dfa2.start_state)]
-    visited = set()
-    visited.add((dfa1.start_state, dfa2.start_state))
-
-    while queue:
-        s1, s2 = queue.pop(0)
-        in_accept1 = s1 in dfa1.accept_states
-        in_accept2 = s2 in dfa2.accept_states
-
-        if in_accept1 != in_accept2:
-            # Temukan string yang membedakan
-            witness = _find_witness(dfa1, dfa2, s1, s2)
-            return False, f'Ditemukan string yang membedakan: "{witness}"'
-
-        for symbol in dfa1.alphabet:
-            n1 = dfa1.transitions.get(s1, {}).get(symbol, 'dead')
-            n2 = dfa2.transitions.get(s2, {}).get(symbol, 'dead')
-            pair = (n1, n2)
-            if pair not in visited:
-                visited.add(pair)
-                queue.append(pair)
-
-    return True, 'Kedua DFA menerima bahasa yang persis sama'
-
-def _find_witness(dfa1, dfa2, s1, s2):
-    """Cari string contoh yang membedakan dua DFA (BFS)"""
-    queue = [(s1, s2, '')]
-    visited = {(s1, s2)}
-    while queue:
-        curr1, curr2, path = queue.pop(0)
-        in1 = curr1 in dfa1.accept_states
-        in2 = curr2 in dfa2.accept_states
-        if in1 != in2:
-            return path if path else 'ε'
-        for sym in dfa1.alphabet:
-            n1 = dfa1.transitions.get(curr1, {}).get(sym, 'dead')
-            n2 = dfa2.transitions.get(curr2, {}).get(sym, 'dead')
-            if (n1, n2) not in visited:
-                visited.add((n1, n2))
-                queue.append((n1, n2, path + sym))
-    return '(tidak ditemukan)'
+# ── Backward Compatibility ───────────────────────────────────────────────────
+# Fungsi check_equivalence telah dipindahkan ke modul automata.equivalence
+# agar lebih modular. Import di bawah ini memastikan kode lama yang mengimport
+# check_equivalence dari minimizer.py tetap berfungsi normal.
+from automata.equivalence import check_equivalence  # noqa: F401
