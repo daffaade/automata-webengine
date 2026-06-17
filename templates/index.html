@@ -176,25 +176,54 @@
       </section>
 
       <!-- DFA EQUIVALENCE -->
+      <!-- DFA EQUIVALENCE -->
       <section id="equivalence" class="page">
         <h2>DFA Equivalence</h2>
 
         <div class="grid">
+          <!-- DFA 1 -->
           <div class="panel">
             <h3>DFA 1</h3>
 
+            <label>States</label>
+            <input id="eq1States" placeholder="Contoh: q0,q1" />
+
+            <label>Alphabet</label>
+            <input id="eq1Alphabet" placeholder="Contoh: 0,1 atau a,b" />
+
+            <label>Start State</label>
+            <input id="eq1Start" placeholder="Contoh: q0" />
+
+            <label>Accept States</label>
+            <input id="eq1Accept" placeholder="Contoh: q1" />
+
+            <label>Transitions</label>
             <textarea
-              id="dfaOne"
-              placeholder="Masukkan data DFA pertama"
+              id="eq1Transitions"
+              placeholder="q0,0,q0&#10;q0,1,q1&#10;q1,0,q0&#10;q1,1,q1"
             ></textarea>
           </div>
 
+          <!-- DFA 2 -->
           <div class="panel">
             <h3>DFA 2</h3>
 
+            <label>States</label>
+            <input id="eq2States" placeholder="Contoh: p0,p1" />
+
+            <label>Alphabet</label>
+            <input id="eq2Alphabet" placeholder="Contoh: 0,1 atau a,b" />
+
+            <label>Start State</label>
+            <input id="eq2Start" placeholder="Contoh: p0" />
+
+            <label>Accept States</label>
+            <input id="eq2Accept" placeholder="Contoh: p1" />
+
+            <label>Transitions</label>
             <textarea
-              id="dfaTwo"
-              placeholder="Masukkan data DFA kedua"
+              id="eq2Transitions"
+              placeholder="p0,0,p0&#10;p0,1,p1&#10;p1,0,p0&#10;p1,1,p1"
             ></textarea>
           </div>
         </div>

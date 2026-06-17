@@ -759,56 +759,205 @@ function runMinimize() {
 
 /* DFA EQUIVALENCE */
 
-function runEquivalence() {
-  const dfa1 = document.getElementById("dfaOne").value.trim();
-  const dfa2 = document.getElementById("dfaTwo").value.trim();
+function parseListInput(value) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item !== "");
+}
 
-  if (dfa1 === "" || dfa2 === "") {
-    document.getElementById("equivalenceOutput").innerHTML = `
+function parseTransitionsInput(value) {
+  const transitions = {};
+
+  const lines = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+
+  lines.forEach((line) => {
+    const parts = line.split(",").map((item) => item.trim());
+
+    if (parts.length === 3) {
+      const from = parts[0];
+      const symbol = parts[1];
+      const to = parts[2];
+
+      transitions[`${from},${symbol}`] = to;
+    }
+  });
+
+  return transitions;
+}
+
+function getEquivalenceDFA(prefix) {
+  return {
+    states: parseListInput(document.getElementById(`${prefix}States`).value),
+    alphabet: parseListInput(
+      document.getElementById(`${prefix}Alphabet`).value,
+    ),
+    start_state: document.getElementById(`${prefix}Start`).value.trim(),
+    accept_states: parseListInput(
+      document.getElementById(`${prefix}Accept`).value,
+    ),
+    transitions: parseTransitionsInput(
+      document.getElementById(`${prefix}Transitions`).value,
+    ),
+  };
+}
+
+function validateEquivalenceInput(dfa, name) {
+  if (dfa.states.length === 0) {
+    return `${name}: States belum diisi.`;
+  }
+
+  if (dfa.alphabet.length === 0) {
+    return `${name}: Alphabet belum diisi.`;
+  }
+
+  if (dfa.start_state === "") {
+    return `${name}: Start state belum diisi.`;
+  }
+
+  if (!dfa.states.includes(dfa.start_state)) {
+    return `${name}: Start state "${dfa.start_state}" tidak ada di daftar states.`;
+  }
+
+  const invalidAccept = dfa.accept_states.find((state) => {
+    return !dfa.states.includes(state);
+  });
+
+  if (invalidAccept) {
+    return `${name}: Accept state "${invalidAccept}" tidak ada di daftar states.`;
+  }
+
+  if (Object.keys(dfa.transitions).length === 0) {
+    return `${name}: Transitions belum diisi.`;
+  }
+
+  return null;
+}
+
+async function runEquivalence() {
+  const output = document.getElementById("equivalenceOutput");
+
+  const dfa1 = getEquivalenceDFA("eq1");
+  const dfa2 = getEquivalenceDFA("eq2");
+
+  const error1 = validateEquivalenceInput(dfa1, "DFA 1");
+  const error2 = validateEquivalenceInput(dfa2, "DFA 2");
+
+  if (error1 || error2) {
+    output.innerHTML = `
       <div class="result reject">Input belum lengkap</div>
-      <p>Masukkan data DFA 1 dan DFA 2 terlebih dahulu.</p>
+      <p>${error1 || error2}</p>
     `;
     return;
   }
 
-  const normalize = (text) => {
-    return text
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line !== "")
-      .sort()
-      .join("\n");
-  };
-
-  const isEquivalent = normalize(dfa1) === normalize(dfa2);
-
-  document.getElementById("equivalenceOutput").innerHTML = `
-    <div class="result ${isEquivalent ? "accept" : "reject"}">
-      ${isEquivalent ? "Equivalent" : "Not Equivalent"}
-    </div>
-
-    <h3 class="preview-title">DFA Equivalence Result</h3>
-
-    <p><b>DFA 1:</b> ${
-      dfa1.split("\n").filter((line) => line.trim() !== "").length
-    } baris aturan</p>
-
-    <p><b>DFA 2:</b> ${
-      dfa2.split("\n").filter((line) => line.trim() !== "").length
-    } baris aturan</p>
-
-    <div class="dfa-line">
-      <div class="state-node">DFA 1</div>
-      <div class="symbol">${isEquivalent ? "=" : "≠"}</div>
-      <div class="state-node ${isEquivalent ? "final" : ""}">DFA 2</div>
-    </div>
-
-    <p>
-      Kedua DFA dinyatakan
-      <b>${isEquivalent ? "equivalent" : "tidak equivalent"}</b>
-      berdasarkan perbandingan struktur transisi yang dimasukkan.
-    </p>
+  output.innerHTML = `
+    <div class="result accept">Memproses...</div>
+    <p>Sedang memeriksa ekuivalensi DFA.</p>
   `;
+
+  try {
+    const response = await fetch("/api/dfa/equivalence", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dfa1: dfa1,
+        dfa2: dfa2,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      output.innerHTML = `
+        <div class="result reject">Error</div>
+        <p>${data.error}</p>
+      `;
+      return;
+    }
+
+    let pairsHtml = "";
+
+    data.visited_pairs.forEach(function (pair) {
+      const sameStatus = pair.accept_dfa1 === pair.accept_dfa2;
+
+      pairsHtml +=
+        '<div class="state-pair-card ' +
+        (sameStatus ? "accept" : "reject") +
+        '">' +
+        '<div class="pair">(' +
+        pair.state_dfa1 +
+        ", " +
+        pair.state_dfa2 +
+        ")</div>" +
+        '<div class="status">' +
+        (sameStatus ? "Status sama" : "Status berbeda") +
+        "</div>" +
+        "</div>";
+    });
+
+    let stepsHtml = "";
+
+    data.steps.forEach(function (step) {
+      stepsHtml += '<div class="step-card">';
+      stepsHtml += "<p>";
+      stepsHtml +=
+        "<b>Step " + step.step + ":</b> " + step.description + "<br />";
+      stepsHtml += step.detail + "<br />";
+
+      if (step.transitions) {
+        stepsHtml += "<b>Transitions:</b><ul>";
+
+        step.transitions.forEach(function (item) {
+          stepsHtml += "<li>" + item + "</li>";
+        });
+
+        stepsHtml += "</ul>";
+      }
+
+      stepsHtml += "<b>Result:</b> " + step.result;
+      stepsHtml += "</p>";
+      stepsHtml += "</div>";
+    });
+
+    output.innerHTML =
+      '<div class="result ' +
+      (data.equivalent ? "accept" : "reject") +
+      '">' +
+      (data.equivalent ? "Equivalent" : "Not Equivalent") +
+      "</div>" +
+      "<p><b>Reason:</b> " +
+      data.reason +
+      "</p>" +
+      (data.witness ? "<p><b>Witness:</b> " + data.witness + "</p>" : "") +
+      '<div class="equivalence-summary">' +
+      '<div class="summary-card"><span>DFA 1 States</span><b>' +
+      data.dfa1_info.num_states +
+      "</b></div>" +
+      '<div class="summary-card"><span>DFA 2 States</span><b>' +
+      data.dfa2_info.num_states +
+      "</b></div>" +
+      '<div class="summary-card"><span>Visited Pairs</span><b>' +
+      data.visited_pairs.length +
+      "</b></div>" +
+      "</div>" +
+      '<h3 class="preview-title">Visited State Pairs</h3>' +
+      '<div class="state-pair-list">' +
+      pairsHtml +
+      "</div>" +
+      '<h3 class="preview-title">Product Construction Steps</h3>' +
+      stepsHtml;
+  } catch (error) {
+    output.innerHTML = `
+      <div class="result reject">Request gagal</div>
+      <p>${error.message}</p>
+    `;
+  }
 }
 
 /* EVENT LISTENER */
