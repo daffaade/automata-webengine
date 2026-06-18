@@ -78,7 +78,8 @@ def build_kleene(frag):
     return NFAFragment(s0, s1, trans)
 
 def build_plus(frag):
-    """Plus: frag+ (satu atau lebih)"""
+    """Plus: frag+ (satu atau lebih) — NOTE: Dalam konteks TBA, + biasanya berarti union.
+    Fungsi ini tetap tersedia jika diperlukan untuk notasi regex standar."""
     s0 = NFAFragment.new_state()
     s1 = NFAFragment.new_state()
     trans = merge_transitions(frag.transitions)
@@ -98,7 +99,9 @@ def build_optional(frag):
     return NFAFragment(s0, s1, trans)
 
 class RegexParser:
-    """Parser regex dengan precedence: * > concat > |"""
+    """Parser regex dengan precedence: * > concat > |/+
+    Catatan: '+' diperlakukan sebagai UNION (alternasi), bukan quantifier.
+    Ini sesuai dengan konvensi TBA (Teori Bahasa & Automata)."""
 
     def __init__(self, regex):
         self.regex = regex
@@ -118,7 +121,7 @@ class RegexParser:
 
     def parse_union(self):
         left = self.parse_concat()
-        while self.peek() == '|':
+        while self.peek() in ('|', '+'):
             self.consume()
             right = self.parse_concat()
             left = build_union(left, right)
@@ -126,19 +129,17 @@ class RegexParser:
 
     def parse_concat(self):
         left = self.parse_quantifier()
-        while self.peek() and self.peek() not in ('|', ')'):
+        while self.peek() and self.peek() not in ('|', '+', ')'):
             right = self.parse_quantifier()
             left = build_concat(left, right)
         return left
 
     def parse_quantifier(self):
         frag = self.parse_atom()
-        while self.peek() in ('*', '+', '?'):
+        while self.peek() in ('*', '?'):
             op = self.consume()
             if op == '*':
                 frag = build_kleene(frag)
-            elif op == '+':
-                frag = build_plus(frag)
             elif op == '?':
                 frag = build_optional(frag)
         return frag
@@ -155,7 +156,7 @@ class RegexParser:
             self.consume()
             escaped = self.consume()
             return build_symbol(escaped)
-        elif ch and ch not in ('|', ')', '*', '+', '?'):
+        elif ch and ch not in ('|', '+', ')', '*', '?'):
             self.consume()
             return build_symbol(ch)
         else:

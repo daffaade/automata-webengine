@@ -44,15 +44,32 @@ class TestRegexToNFA(unittest.TestCase):
         self.assertFalse(nfa.simulate("a"))
         self.assertFalse(nfa.simulate("aba"))
 
-    def test_plus_and_optional(self):
-        # Menerima string a+b?
-        nfa = regex_to_nfa("a+b?")
+    def test_plus_as_union(self):
+        # Dalam konvensi TBA, '+' berarti union (alternasi), sama seperti '|'
+        nfa = regex_to_nfa("a+b")
+        self.assertTrue(nfa.simulate("a"))
+        self.assertTrue(nfa.simulate("b"))
+        self.assertFalse(nfa.simulate("ab"))
+        self.assertFalse(nfa.simulate(""))
+
+    def test_tba_regex_bb(self):
+        # Regex TBA: (a+b)*bb(a+b)* — menerima string yang mengandung 'bb'
+        nfa = regex_to_nfa("(a+b)*bb(a+b)*")
+        self.assertTrue(nfa.simulate("bb"))
+        self.assertTrue(nfa.simulate("abb"))
+        self.assertTrue(nfa.simulate("bba"))
+        self.assertTrue(nfa.simulate("babba"))
+        self.assertTrue(nfa.simulate("aabb"))
+        self.assertFalse(nfa.simulate("a"))
+        self.assertFalse(nfa.simulate("b"))
+        self.assertFalse(nfa.simulate("aba"))
+
+    def test_optional(self):
+        # Operator '?' (optional) — nol atau satu kali
+        nfa = regex_to_nfa("ab?")
         self.assertTrue(nfa.simulate("a"))
         self.assertTrue(nfa.simulate("ab"))
-        self.assertTrue(nfa.simulate("aa"))
-        self.assertTrue(nfa.simulate("aab"))
         self.assertFalse(nfa.simulate(""))
-        self.assertFalse(nfa.simulate("b"))
         self.assertFalse(nfa.simulate("abb"))
 
     def test_simulate_verbose(self):

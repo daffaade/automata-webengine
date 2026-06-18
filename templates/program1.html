@@ -45,7 +45,7 @@
           <div class="panel tool-panel">
             <h3>Control Panel</h3>
 
-            <button onclick="addVisualState()">+ Add State</button>
+            <button type="button" onclick="addVisualState()">+ Add State</button>
 
             <label>Alphabet</label>
             <input
@@ -75,7 +75,7 @@
             <label>Symbol</label>
             <input id="transitionSymbol" placeholder="Contoh: a atau b" />
 
-            <button onclick="addVisualTransition()">Add Transition</button>
+            <button type="button" onclick="addVisualTransition()">Add Transition</button>
 
             <hr />
 
@@ -84,9 +84,9 @@
             <label>Input String</label>
             <input id="visualInputString" placeholder="Contoh: aab" />
 
-            <button onclick="runVisualDFA()">Run DFA</button>
+            <button type="button" onclick="runVisualDFA()">Run DFA</button>
 
-            <button class="secondary-btn" onclick="resetVisualDFA()">
+            <button type="button" class="secondary-btn" onclick="resetVisualDFA()">
               Reset
             </button>
           </div>
@@ -96,8 +96,8 @@
             <div class="graph-header">
               <h3>DFA Graph Editor</h3>
               <div class="zoom-controls">
-                <button class="zoom-btn" onclick="zoomGraph(1.2)">+</button>
-                <button class="zoom-btn" onclick="zoomGraph(0.8)">-</button>
+                <button type="button" class="zoom-btn" onclick="zoomGraph(1.2)">+</button>
+                <button type="button" class="zoom-btn" onclick="zoomGraph(0.8)">-</button>
               </div>
             </div>
 
