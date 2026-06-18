@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from automata.dfa import DFA
 from automata.nfa import NFA
 from automata.regex_to_nfa import regex_to_nfa
-from automata.minimizer import minimize_dfa
+from automata.minimizer import DFAMinimizer
 from automata.equivalence import check_equivalence, get_equivalence_details
 
 app = Flask(__name__)
@@ -102,24 +102,36 @@ def nfa_test():
 def dfa_minimize():
     data = request.json
     try:
-        dfa = DFA(
+        minimizer = DFAMinimizer(
             states=data['states'],
             alphabet=data['alphabet'],
             transitions=data['transitions'],
             start_state=data['start_state'],
             accept_states=data['accept_states']
         )
-        min_dfa, steps = minimize_dfa(dfa)
+        
+        result = minimizer.minimize()
+        
+        if not result['success']:
+            return jsonify({
+                'error': 'Validasi DFA gagal',
+                'validation_errors': result['error']
+            }), 400
+
+        stats = result['stats']
+
         return jsonify({
-            'minimized': min_dfa.to_dict(),
-            'steps': steps,
-            'original_states': len(dfa.states),
-            'minimized_states': len(min_dfa.states),
-            'message': f'Berhasil! Dari {len(dfa.states)} state -> {len(min_dfa.states)} state'
+            'minimized': minimizer.to_dict(),
+            'steps': result['iterations'],
+            'distinguishable_table': result['distinguishable_table'],
+            'merged_groups': result['merged_groups'],
+            'original_states': stats['original_state_count'],
+            'minimized_states': stats['minimal_state_count'],
+            'message': f'Berhasil! Dari {stats["original_state_count"]} state → {stats["minimal_state_count"]} state'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-
+    
 # ── Fitur 4: Ekuivalensi DFA ────────────────────────────────────────────────
 
 @app.route('/api/dfa/equivalence', methods=['POST'])
