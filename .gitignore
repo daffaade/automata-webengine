@@ -2,7 +2,12 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-.env
-.venv/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.vscode/
+.idea/
 venv/
+.venv/
+env/
+.env
