@@ -853,9 +853,10 @@ async function runMinimize() {
   const parsedTransitions = parseTransitionsInput(transitionsRaw);
   
   const alphabetSet = new Set();
-  for (const from in parsedTransitions) {
-    for (const symbol in parsedTransitions[from]) {
-      alphabetSet.add(symbol);
+  for (const key in parsedTransitions) {
+    const parts = key.split(",");
+    if (parts.length >= 2) {
+      alphabetSet.add(parts.slice(1).join(","));
     }
   }
 
@@ -893,17 +894,30 @@ async function runMinimize() {
       <div class="result accept">${data.message}</div>
       <p><b>Jumlah state sebelum:</b> ${data.original_states}</p>
       <p><b>Jumlah state sesudah:</b> ${data.minimized_states}</p>
-      
-      <h3 class="preview-title">Langkah Minimisasi</h3>
+      <h3 class="preview-title">Log Iterasi (Table-Filling)</h3>
       <ul style="padding-left: 20px; line-height: 1.6;">
-        ${data.steps.map(step => {
-          let stepNum = step.step;
-          if (typeof stepNum === 'string' && stepNum.startsWith('3.')) {
-            stepNum = "3 (Iterasi " + stepNum.split('.')[1] + ")";
+        ${data.steps.length === 0 ? "<li>Tidak ada iterasi tambahan (semua state sudah terpisah).</li>" : ""}
+        ${data.steps.map(iter => {
+          if (iter.newly_marked_pairs.length === 0) {
+            return `<li><b>Iterasi ${iter.iteration}:</b> Tidak ada pasangan baru yang ditandai.</li>`;
           }
-          return `<li><b>Step ${stepNum}:</b> ${step.description}</li>`;
+          
+          const details = iter.newly_marked_pairs.map(p => 
+            `{${p.pair.join(', ')}} (via '${p.via_symbol}' → {${p.leads_to.join(', ')}})`
+          ).join('<br>&nbsp;&nbsp;&nbsp;&nbsp;→ ');
+          
+          return `<li><b>Iterasi ${iter.iteration}:</b> Menandai pasangan distinguishable:<br>&nbsp;&nbsp;&nbsp;&nbsp;→ ${details}</li>`;
         }).join('')}
       </ul>
+
+      <h3 class="preview-title" style="margin-top: 15px;">Hasil Penggabungan</h3>
+      ${Object.keys(data.merged_groups).length > 0 ? `
+        <ul style="padding-left: 20px; line-height: 1.6;">
+          ${Object.entries(data.merged_groups).map(([rep, members]) => {
+            return `<li>State <b>${rep}</b> mewakili: { ${members.join(', ')} }</li>`;
+          }).join('')}
+        </ul>
+      ` : '<p>Tidak ada state yang digabungkan (DFA sudah minimal).</p>'}
     `;
 
   } catch (error) {
@@ -1324,7 +1338,7 @@ function renderStaticGraph(stateLayerId, svgId, graphData) {
     const toState = graphData.states.find((s) => s.id === String(transition.to));
 
     if (fromState && toState) {
-      drawStaticTransition(svg, fromState, toState, transition.symbol, index, graphData.transitions);
+      drawStaticTransition(svg, fromState, toState, transition.symbol, index, graphData.transitions, graphData.states);
     }
   });
 
@@ -1349,7 +1363,48 @@ function renderStaticGraph(stateLayerId, svgId, graphData) {
   });
 }
 
-function drawStaticTransition(svg, fromState, toState, symbol, transitionIndex, allTransitions) {
+function getStaticIntermediateNodes(fromState, toState, allStates) {
+  const NODE_RADIUS = 39;
+  const MARGIN = 15;
+  const hitRadius = NODE_RADIUS + MARGIN;
+
+  const fromCX = fromState.x + NODE_RADIUS;
+  const fromCY = fromState.y + NODE_RADIUS;
+  const toCX = toState.x + NODE_RADIUS;
+  const toCY = toState.y + NODE_RADIUS;
+
+  const blocked = [];
+
+  allStates.forEach((state) => {
+    if (state.id === fromState.id || state.id === toState.id) return;
+
+    const cx = state.x + NODE_RADIUS;
+    const cy = state.y + NODE_RADIUS;
+
+    const dx = toCX - fromCX;
+    const dy = toCY - fromCY;
+    const lenSq = dx * dx + dy * dy;
+
+    if (lenSq === 0) return;
+
+    let t = ((cx - fromCX) * dx + (cy - fromCY) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+
+    const closestX = fromCX + t * dx;
+    const closestY = fromCY + t * dy;
+
+    const distSq =
+      (cx - closestX) * (cx - closestX) + (cy - closestY) * (cy - closestY);
+
+    if (distSq < hitRadius * hitRadius) {
+      blocked.push(state);
+    }
+  });
+
+  return blocked;
+}
+
+function drawStaticTransition(svg, fromState, toState, symbol, transitionIndex, allTransitions, allStates) {
   const fromX = fromState.x + 39;
   const fromY = fromState.y + 39;
   const toX = toState.x + 39;
@@ -1382,15 +1437,21 @@ function drawStaticTransition(svg, fromState, toState, symbol, transitionIndex, 
     return item.symbol === symbol;
   });
 
+  const blockedNodes = getStaticIntermediateNodes(fromState, toState, allStates);
+
   let curveOffset = 0;
 
   if (hasReverse) {
     curveOffset = -65;
   } else if (sameDirection.length > 1) {
     curveOffset = (sameDirectionIndex - (sameDirection.length - 1) / 2) * 40;
-  } else if (distance > 260) {
-    // If it skips a node (distance ~480+), curve it high enough to clear loops
-    curveOffset = -(60 + distance * 0.45); 
+  } else if (blockedNodes.length > 0) {
+    const baseCurve = Math.max(80, distance * 0.45);
+    curveOffset = -(baseCurve + blockedNodes.length * 30);
+  } else if (distance > 300) {
+    // If it skips a node but doesn't technically block it based on bounding box
+    // still add a small curve for readability
+    curveOffset = -40; 
   }
 
   if (curveOffset !== 0) {
