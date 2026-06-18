@@ -176,41 +176,45 @@ function resetSvg(svg) {
 }
 
 function renderVisualGraph() {
-  const stateLayer = document.getElementById("stateLayer");
-  const svg = document.getElementById("transitionSvg");
+  try {
+    const stateLayer = document.getElementById("stateLayer");
+    const svg = document.getElementById("transitionSvg");
 
-  if (!stateLayer || !svg) return;
+    if (!stateLayer || !svg) return;
 
-  stateLayer.innerHTML = "";
-  resetSvg(svg);
+    stateLayer.innerHTML = "";
+    resetSvg(svg);
 
-  visualTransitions.forEach((transition, index) => {
-    const fromState = visualStates.find(
-      (state) => state.id === transition.from,
-    );
-    const toState = visualStates.find((state) => state.id === transition.to);
+    visualTransitions.forEach((transition, index) => {
+      const fromState = visualStates.find(
+        (state) => state.id === transition.from,
+      );
+      const toState = visualStates.find((state) => state.id === transition.to);
 
-    if (fromState && toState) {
-      drawTransition(svg, fromState, toState, transition.symbol, index);
-    }
-  });
+      if (fromState && toState) {
+        drawTransition(svg, fromState, toState, transition.symbol, index);
+      }
+    });
 
-  visualStates.forEach((state) => {
-    const node = document.createElement("div");
+    visualStates.forEach((state) => {
+      const node = document.createElement("div");
+      node.id = `visual-${state.id}`;
+      node.className = "visual-state";
 
-    node.className = `visual-state ${state.isFinal ? "final" : ""}`;
+      if (state.isFinal) {
+        node.classList.add("final");
+      }
 
-    if (
-      selectedVisualItem.type === "state" &&
-      selectedVisualItem.value === state.id
-    ) {
-      node.classList.add("selected");
-    }
+      if (
+        selectedVisualItem.type === "state" &&
+        selectedVisualItem.value === state.id
+      ) {
+        node.classList.add("selected");
+      }
 
-    node.id = `visual-${state.id}`;
-    node.textContent = state.id;
-    node.style.left = `${state.x}px`;
-    node.style.top = `${state.y}px`;
+      node.style.left = state.x + "px";
+      node.style.top = state.y + "px";
+      node.innerHTML = `<span>${state.id}</span>`;
 
     node.addEventListener("pointerdown", function (event) {
       event.stopPropagation();
@@ -242,6 +246,9 @@ function renderVisualGraph() {
 
     stateLayer.appendChild(node);
   });
+  } catch (error) {
+    console.error("Error drawing visual graph:", error);
+  }
 }
 
 function redrawTransitionsOnly() {
@@ -263,11 +270,54 @@ function redrawTransitionsOnly() {
   });
 }
 
+function getIntermediateNodes(fromState, toState) {
+  const NODE_RADIUS = 39;
+  const MARGIN = 10;
+  const hitRadius = NODE_RADIUS + MARGIN;
+
+  const fromCX = fromState.x + NODE_RADIUS;
+  const fromCY = fromState.y + NODE_RADIUS;
+  const toCX = toState.x + NODE_RADIUS;
+  const toCY = toState.y + NODE_RADIUS;
+
+  const blocked = [];
+
+  visualStates.forEach((state) => {
+    if (state.id === fromState.id || state.id === toState.id) return;
+
+    const cx = state.x + NODE_RADIUS;
+    const cy = state.y + NODE_RADIUS;
+
+    // Project the node center onto the line segment from→to
+    const dx = toCX - fromCX;
+    const dy = toCY - fromCY;
+    const lenSq = dx * dx + dy * dy;
+
+    if (lenSq === 0) return;
+
+    let t = ((cx - fromCX) * dx + (cy - fromCY) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+
+    const closestX = fromCX + t * dx;
+    const closestY = fromCY + t * dy;
+
+    const distSq =
+      (cx - closestX) * (cx - closestX) + (cy - closestY) * (cy - closestY);
+
+    if (distSq < hitRadius * hitRadius) {
+      blocked.push(state);
+    }
+  });
+
+  return blocked;
+}
+
 function drawTransition(svg, fromState, toState, symbol, transitionIndex) {
-  const fromX = fromState.x + 39;
-  const fromY = fromState.y + 39;
-  const toX = toState.x + 39;
-  const toY = toState.y + 39;
+  const NODE_RADIUS = 39;
+  const fromX = fromState.x + NODE_RADIUS;
+  const fromY = fromState.y + NODE_RADIUS;
+  const toX = toState.x + NODE_RADIUS;
+  const toY = toState.y + NODE_RADIUS;
 
   if (fromState.id === toState.id) {
     drawLoopTransition(svg, fromX, fromY, symbol, transitionIndex);
@@ -293,9 +343,23 @@ function drawTransition(svg, fromState, toState, symbol, transitionIndex) {
     return item.symbol === symbol;
   });
 
+  // Check for intermediate nodes that the straight line would cross
+  const blockedNodes = getIntermediateNodes(fromState, toState);
+
   let curveOffset = 0;
 
-  if (hasReverse) {
+  if (blockedNodes.length > 0) {
+    // Scale curve based on distance and number of blocked nodes
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const baseCurve = Math.max(80, dist * 0.45);
+    curveOffset = -(baseCurve + blockedNodes.length * 30);
+
+    if (hasReverse) {
+      curveOffset = -(Math.abs(curveOffset) + 30);
+    }
+  } else if (hasReverse) {
     curveOffset = -65;
   } else if (sameDirection.length > 1) {
     curveOffset = (sameDirectionIndex - (sameDirection.length - 1) / 2) * 40;
@@ -435,8 +499,8 @@ function drawLoopTransition(svg, x, y, symbol, transitionIndex) {
   );
 
   const d = `
-    M ${x} ${y - 38}
-    C ${x - 50} ${y - 100}, ${x + 50} ${y - 100}, ${x} ${y - 38}
+    M ${x - 12} ${y - 36}
+    C ${x - 45} ${y - 100}, ${x + 45} ${y - 100}, ${x + 12} ${y - 36}
   `;
 
   loopPath.setAttribute("d", d);
@@ -1163,6 +1227,16 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         renderVisualGraph();
+      }
+    });
+  }
+
+  const visualInput = document.getElementById("visualInputString");
+  if (visualInput) {
+    visualInput.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        runVisualDFA();
       }
     });
   }
