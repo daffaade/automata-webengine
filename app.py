@@ -9,7 +9,23 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('dashboard.html')
+
+@app.route('/program1')
+def program1():
+    return render_template('program1.html')
+
+@app.route('/program2')
+def program2():
+    return render_template('program2.html')
+
+@app.route('/program3')
+def program3():
+    return render_template('program3.html')
+
+@app.route('/program4')
+def program4():
+    return render_template('program4.html')
 
 # ── Fitur 1: DFA Simulator ──────────────────────────────────────────────────
 
@@ -80,10 +96,20 @@ def regex_convert():
 def nfa_test():
     data = request.json
     try:
+        # Unflatten transitions (they come as 'q1,a': ['q2'] from JS to_dict format)
+        nested_trans = {}
+        for key, targets in data['transitions'].items():
+            parts = key.split(',')
+            state = parts[0]
+            symbol = ','.join(parts[1:])
+            if state not in nested_trans:
+                nested_trans[state] = {}
+            nested_trans[state][symbol] = targets
+
         nfa = NFA(
             states=data['states'],
             alphabet=data['alphabet'],
-            transitions=data['transitions'],
+            transitions=nested_trans,
             start_state=data['start_state'],
             accept_states=data['accept_states']
         )

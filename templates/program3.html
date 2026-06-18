@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JAutomata - Program 3 (DFA Minimization)</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <!-- DECORATIVE BACKGROUND -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- NAVBAR -->
+    <div class="sidebar transparent-sidebar program-topbar">
+      <div class="brand highlight-logo">
+        <div class="logo-title">👨‍💻 JAutomata</div>
+        <div class="logo-subtitle">Automata Simulator</div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="page-badge">Program 3: DFA Minimization</div>
+        <a href="/" class="back-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Dashboard
+        </a>
+        <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">
+          <span class="icon">☀️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="content">
+      <!-- DFA MINIMIZATION -->
+      <section id="minimize" class="page active-page">
+        <h2>DFA Minimization</h2>
+
+        <div class="visual-layout">
+          <div class="panel control-panel">
+            <h3>Input DFA</h3>
+
+            <label for="minStates">States</label>
+            <input
+              type="text"
+              id="minStates"
+              class="form-control"
+              placeholder="Contoh: q0,q1,q2,q3"
+            />
+
+            <label for="minFinal">Final States</label>
+            <input
+              type="text"
+              id="minFinal"
+              class="form-control"
+              placeholder="Contoh: q2,q3"
+            />
+
+            <label for="minTransitions">Transitions</label>
+            <textarea
+              id="minTransitions"
+              class="form-control"
+              rows="8"
+              placeholder="Format: asal, simbol, tujuan&#10;Contoh:&#10;q0,0,q1&#10;q0,1,q2&#10;q1,0,q1&#10;q1,1,q3"
+            ></textarea>
+
+            <button onclick="runMinimize()">Minimize DFA</button>
+          </div>
+
+          <div class="panel graph-panel">
+            <div class="graph-header">
+              <h3>DFA Graph Output</h3>
+              <div class="graph-toggle">
+                <button id="btnViewOriginal" class="toggle-view active" onclick="toggleMinGraph('original')">Original</button>
+                <button id="btnViewMinimized" class="toggle-view" onclick="toggleMinGraph('minimized')">Minimized</button>
+              </div>
+              <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomStaticGraph('minGraphCanvas', 1.2)">+</button>
+                <button class="zoom-btn" onclick="zoomStaticGraph('minGraphCanvas', 0.8)">-</button>
+              </div>
+            </div>
+
+            <div id="minGraphArea" class="graph-area">
+              <div id="minGraphCanvas" class="graph-canvas">
+                <svg id="minTransitionSvg"></svg>
+                <div id="minStateLayer"></div>
+              </div>
+            </div>
+
+            <div class="graph-output" style="margin-top: 16px;">
+              <h3>Output Details</h3>
+              <div id="minimizeOutput" class="output-box">
+                DFA minimal akan muncul di sini.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>

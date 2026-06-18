@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JAutomata - Program 4 (DFA Equivalence)</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <!-- DECORATIVE BACKGROUND -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- NAVBAR -->
+    <div class="sidebar transparent-sidebar program-topbar">
+      <div class="brand highlight-logo">
+        <div class="logo-title">👨‍💻 JAutomata</div>
+        <div class="logo-subtitle">Automata Simulator</div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="page-badge">Program 4: DFA Equivalence</div>
+        <a href="/" class="back-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Dashboard
+        </a>
+        <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">
+          <span class="icon">☀️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="content">
+      <!-- DFA EQUIVALENCE -->
+      <section id="equivalence" class="page active-page">
+        <h2>DFA Equivalence</h2>
+
+        <div class="grid">
+          <!-- DFA 1 -->
+          <div class="panel">
+            <h3>DFA 1</h3>
+
+            <label>States</label>
+            <input id="eq1States" placeholder="Contoh: q0,q1" />
+
+            <label>Alphabet</label>
+            <input id="eq1Alphabet" placeholder="Contoh: 0,1" />
+
+            <label>Start State</label>
+            <input id="eq1Start" placeholder="Contoh: q0" />
+
+            <label>Accept States</label>
+            <input id="eq1Accept" placeholder="Contoh: q1" />
+
+            <label>Transitions</label>
+            <textarea
+              id="eq1Transitions"
+              placeholder="Contoh:&#10;q0,0,q0&#10;q0,1,q1&#10;q1,0,q0&#10;q1,1,q1"
+            ></textarea>
+          </div>
+
+          <!-- DFA 2 -->
+          <div class="panel">
+            <h3>DFA 2</h3>
+
+            <label>States</label>
+            <input id="eq2States" placeholder="Contoh: p0,p1" />
+
+            <label>Alphabet</label>
+            <input id="eq2Alphabet" placeholder="Contoh: 0,1" />
+
+            <label>Start State</label>
+            <input id="eq2Start" placeholder="Contoh: p0" />
+
+            <label>Accept States</label>
+            <input id="eq2Accept" placeholder="Contoh: p1" />
+
+            <label>Transitions</label>
+            <textarea
+              id="eq2Transitions"
+              placeholder="Contoh:&#10;p0,0,p0&#10;p0,1,p1&#10;p1,0,p0&#10;p1,1,p1"
+            ></textarea>
+          </div>
+        </div>
+
+        <button class="check-btn" onclick="runEquivalence()">
+          Check Equivalence
+        </button>
+
+        <div id="eqGraphContainer" class="grid" style="display: none; margin-top: 24px; margin-bottom: 24px;">
+          <div class="panel" style="margin: 0;">
+            <div class="graph-header">
+              <h3>DFA 1 Graph</h3>
+              <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomStaticGraph('eq1GraphCanvas', 1.2)">+</button>
+                <button class="zoom-btn" onclick="zoomStaticGraph('eq1GraphCanvas', 0.8)">-</button>
+              </div>
+            </div>
+            <div id="eq1GraphArea" class="graph-area" style="height: 400px;">
+              <div id="eq1GraphCanvas" class="graph-canvas">
+                <svg id="eq1TransitionSvg"></svg>
+                <div id="eq1StateLayer"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin: 0;">
+            <div class="graph-header">
+              <h3>DFA 2 Graph</h3>
+              <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomStaticGraph('eq2GraphCanvas', 1.2)">+</button>
+                <button class="zoom-btn" onclick="zoomStaticGraph('eq2GraphCanvas', 0.8)">-</button>
+              </div>
+            </div>
+            <div id="eq2GraphArea" class="graph-area" style="height: 400px;">
+              <div id="eq2GraphCanvas" class="graph-canvas">
+                <svg id="eq2TransitionSvg"></svg>
+                <div id="eq2StateLayer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="equivalenceOutput" class="panel result-panel">
+          Hasil equivalence akan muncul di sini.
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>

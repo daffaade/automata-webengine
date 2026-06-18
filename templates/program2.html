@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JAutomata - Program 2 (Regex to NFA)</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <!-- DECORATIVE BACKGROUND -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- NAVBAR -->
+    <div class="sidebar transparent-sidebar program-topbar">
+      <div class="brand highlight-logo">
+        <div class="logo-title">👨‍💻 JAutomata</div>
+        <div class="logo-subtitle">Automata Simulator</div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="page-badge">Program 2: Regex to NFA</div>
+        <a href="/" class="back-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Dashboard
+        </a>
+        <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">
+          <span class="icon">☀️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="content">
+      <!-- REGEX TO NFA -->
+      <section id="regex" class="page active-page">
+        <h2>Regex to NFA</h2>
+
+        <div class="visual-layout">
+          <div class="panel control-panel">
+            <div class="input-group">
+            <label for="regexInput">Regular Expression</label>
+            <input
+              type="text"
+              id="regexInput"
+              class="form-control"
+              placeholder="Contoh: (a|b)*ab"
+            />
+          </div>
+
+          <div class="input-group">
+            <label for="regexString">Test String (Opsional)</label>
+            <input
+              type="text"
+              id="regexString"
+              class="form-control"
+              placeholder="Contoh: aab"
+            />
+          </div>
+
+            <button onclick="runRegex()">Generate & Test NFA</button>
+          </div>
+
+          <div class="panel graph-panel">
+            <div class="graph-header">
+              <h3>NFA Graph Output</h3>
+              <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomStaticGraph('regexGraphCanvas', 1.2)">+</button>
+                <button class="zoom-btn" onclick="zoomStaticGraph('regexGraphCanvas', 0.8)">-</button>
+              </div>
+            </div>
+
+            <div id="regexGraphArea" class="graph-area">
+              <div id="regexGraphCanvas" class="graph-canvas">
+                <svg id="regexTransitionSvg"></svg>
+                <div id="regexStateLayer"></div>
+              </div>
+            </div>
+
+            <div class="graph-output" style="margin-top: 16px;">
+              <h3>Output Details</h3>
+              <div id="regexOutput" class="output-box empty-output">
+                Hasil konversi NFA dan simulasi akan muncul di sini.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
