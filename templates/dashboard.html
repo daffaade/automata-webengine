@@ -1,76 +1,89 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JAutomata - Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
-  <body class="dashboard-body">
-    <!-- DECORATIVE BACKGROUND -->
-    <div class="bg-glow bg-glow-1"></div>
-    <div class="bg-glow bg-glow-2"></div>
 
-    <!-- NAVBAR -->
-    <div class="sidebar transparent-sidebar">
-      <div class="brand highlight-logo">
-        <div class="logo-title">👨‍💻 JAutomata</div>
-        <div class="logo-subtitle">Automata Simulator</div>
-      </div>
-      <div class="header-actions">
-        <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">
-          <span class="icon">☀️</span>
-        </button>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JAutomata - Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=5) }}" />
+</head>
+
+<body class="dashboard-body">
+  <!-- DECORATIVE BACKGROUND -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- NAVBAR -->
+  <div class="sidebar transparent-sidebar">
+    <div class="brand highlight-logo">
+      <div class="logo-title">JAutomata</div>
+      <div class="logo-subtitle">Automata Simulator</div>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">
+        <span class="icon">☀️</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <main class="content dashboard-content">
+    <div class="dashboard-header">
+      <h2>Selamat Datang di JAutomata</h2>
+      <p>Silakan pilih program simulasi automata yang ingin Anda jalankan.</p>
     </div>
 
-    <!-- CONTENT -->
-    <main class="content dashboard-content">
-      <div class="dashboard-header">
-        <h2>Selamat Datang di JAutomata</h2>
-        <p>Silakan pilih program simulasi automata yang ingin Anda jalankan.</p>
-      </div>
+    <div class="dashboard-grid">
+      <a href="/program1" class="dashboard-card fancy-card">
+        <div class="card-icon">1</div>
+        <h3>Program 1: DFA Simulator</h3>
+        <p>
+          Simulator visual interaktif untuk membangun dan menguji Deterministic Finite Automaton (DFA) dengan simulasi
+          grafis secara langsung.
+        </p>
+        <div class="card-action">Masuk ke Program 1 &rarr;</div>
+      </a>
 
-      <div class="dashboard-grid">
-        <a href="/program1" class="dashboard-card fancy-card">
-          <div class="card-icon">1</div>
-          <h3>Program 1: DFA Simulator</h3>
-          <p>
-            Simulator visual interaktif untuk membangun dan menguji Deterministic Finite Automaton (DFA) dengan simulasi grafis secara langsung.
-          </p>
-          <div class="card-action">Masuk ke Program 1 &rarr;</div>
-        </a>
+      <a href="/program2" class="dashboard-card fancy-card">
+        <div class="card-icon">2</div>
+        <h3>Program 2: Regex to NFA</h3>
+        <p>
+          Alat konversi untuk mengubah Regular Expression menjadi
+          Nondeterministic Finite Automaton (NFA) dan menguji string secara otomatis.
+        </p>
+        <div class="card-action">Masuk ke Program 2 &rarr;</div>
+      </a>
 
-        <a href="/program2" class="dashboard-card fancy-card">
-          <div class="card-icon">2</div>
-          <h3>Program 2: Regex to NFA</h3>
-          <p>
-            Alat konversi untuk mengubah Regular Expression menjadi 
-            Nondeterministic Finite Automaton (NFA) dan menguji string secara otomatis.
-          </p>
-          <div class="card-action">Masuk ke Program 2 &rarr;</div>
-        </a>
+      <a href="/program3" class="dashboard-card fancy-card">
+        <div class="card-icon">3</div>
+        <h3>Program 3: DFA Minimization</h3>
+        <p>
+          Alat untuk meminimalkan jumlah state pada sebuah Deterministic Finite Automaton (DFA) dengan mempertahankan
+          bahasa dan fungsionalitas aslinya.
+        </p>
+        <div class="card-action">Masuk ke Program 3 &rarr;</div>
+      </a>
 
-        <a href="/program3" class="dashboard-card fancy-card">
-          <div class="card-icon">3</div>
-          <h3>Program 3: DFA Minimization</h3>
-          <p>
-            Alat untuk meminimalkan jumlah state pada sebuah Deterministic Finite Automaton (DFA) dengan mempertahankan bahasa dan fungsionalitas aslinya.
-          </p>
-          <div class="card-action">Masuk ke Program 3 &rarr;</div>
-        </a>
+      <a href="/program4" class="dashboard-card fancy-card">
+        <div class="card-icon">4</div>
+        <h3>Program 4: DFA Equivalence</h3>
+        <p>
+          Alat untuk menguji dan membuktikan apakah dua buah Deterministic Finite Automaton (DFA) yang berbeda saling
+          ekuivalen satu sama lain.
+        </p>
+        <div class="card-action">Masuk ke Program 4 &rarr;</div>
+      </a>
+    </div>
+  </main>
 
-        <a href="/program4" class="dashboard-card fancy-card">
-          <div class="card-icon">4</div>
-          <h3>Program 4: DFA Equivalence</h3>
-          <p>
-            Alat untuk menguji dan membuktikan apakah dua buah Deterministic Finite Automaton (DFA) yang berbeda saling ekuivalen satu sama lain.
-          </p>
-          <div class="card-action">Masuk ke Program 4 &rarr;</div>
-        </a>
-      </div>
-    </main>
+  <script src="{{ url_for('static', filename='script.js', v=1) }}"></script>
+</body>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-  </body>
 </html>
+
+

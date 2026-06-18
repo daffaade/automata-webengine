@@ -1,13 +1,23 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap");
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Inter", Arial, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.logo-title,
+.page-badge,
+button {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
 body {
+  font-family: 'Inter', sans-serif;
   background: #0d1117;
   color: #e6edf3;
   display: block;
@@ -908,8 +918,22 @@ body.light-mode ::-webkit-scrollbar-thumb:hover {
 
 .theme-toggle-btn {
   width: 40px;
+  height: 40px;
   padding: 0;
   display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-btn .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.theme-toggle-btn .icon img {
+  display: block;
 }
 
 .back-btn:hover,
