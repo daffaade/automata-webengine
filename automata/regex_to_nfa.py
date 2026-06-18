@@ -193,7 +193,7 @@ def regex_to_nfa(regex):
                 alphabet.add(sym)
 
     return NFA(
-        states=sorted(list(all_states)),
+        states=sorted(list(all_states), key=lambda x: int(x[1:]) if x.startswith('q') and x[1:].isdigit() else 0),
         alphabet=sorted(list(alphabet)),
         transitions=frag.transitions,
         start_state=frag.start,

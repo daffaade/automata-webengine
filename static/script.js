@@ -405,7 +405,9 @@ function drawCurvedTransition(
 
   svg.appendChild(path);
 
-  addTransitionText(svg, controlX, controlY - 8, symbol, transitionIndex);
+  const peakX = midX + normalX * (curveOffset / 2);
+  const peakY = midY + normalY * (curveOffset / 2);
+  addTransitionText(svg, peakX, peakY - 8, symbol, transitionIndex);
 }
 
 function drawLoopTransition(svg, x, y, symbol, transitionIndex) {
@@ -645,116 +647,238 @@ function deleteSelectedVisualItem() {
 
 /* REGEX TO NFA */
 
-function runRegex() {
+async function runRegex() {
   const regexOutput = document.getElementById("regexOutput");
   regexOutput.classList.remove("empty-output");
 
   const regex = document.getElementById("regexInput").value.trim();
   const testString = document.getElementById("regexString").value.trim();
 
-  if (regex === "" || testString === "") {
+  if (regex === "") {
     regexOutput.innerHTML = `
       <div class="result reject">Input belum lengkap</div>
-      <p>Masukkan Regular Expression dan Test String terlebih dahulu.</p>
+      <p>Masukkan Regular Expression terlebih dahulu.</p>
     `;
     return;
   }
-
-  let jsRegex;
-
-  try {
-    jsRegex = new RegExp("^" + regex + "$");
-  } catch (error) {
-    regexOutput.innerHTML = `
-      <div class="result reject">Regex tidak valid</div>
-      <p>${error.message}</p>
-    `;
-    return;
-  }
-
-  const accepted = jsRegex.test(testString);
 
   regexOutput.innerHTML = `
-    <div class="result ${accepted ? "accept" : "reject"}">
-      ${accepted ? "Accepted" : "Rejected"}
-    </div>
-
-    <p><b>Regex:</b> ${regex}</p>
-    <p><b>Test String:</b> ${testString}</p>
-
-    <h3 class="preview-title">Generated NFA Preview</h3>
-
-    <div class="dfa-line">
-      <div class="state-node">q0</div>
-      <div class="symbol">ε</div>
-      <div class="state-node">q1</div>
-      <div class="symbol">a,b</div>
-      <div class="state-node">q2</div>
-      <div class="symbol">a</div>
-      <div class="state-node">q3</div>
-      <div class="symbol">b</div>
-      <div class="state-node">q4</div>
-      <div class="symbol">b</div>
-      <div class="state-node final">qf</div>
-    </div>
-
-    <p>
-      Regex berhasil diproses dan string
-      <b>${accepted ? "diterima" : "ditolak"}</b>.
-    </p>
+    <div class="result accept">Memproses...</div>
+    <p>Sedang mengkonversi Regex ke NFA...</p>
   `;
+
+  try {
+    // 1. Convert Regex to NFA
+    const convertRes = await fetch("/api/regex/to-nfa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ regex: regex }),
+    });
+
+    const convertData = await convertRes.json();
+
+    if (!convertRes.ok) {
+      regexOutput.innerHTML = `
+        <div class="result reject">Regex tidak valid</div>
+        <p>${convertData.error || "Gagal mengkonversi Regex"}</p>
+      `;
+      return;
+    }
+
+    const nfa = convertData.nfa;
+
+    let testResultHtml = "";
+    if (testString !== "") {
+      const testRes = await fetch("/api/nfa/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          states: nfa.states,
+          alphabet: nfa.alphabet,
+          transitions: nfa.transitions,
+          start_state: nfa.start_state,
+          accept_states: nfa.accept_states,
+          string: testString
+        }),
+      });
+
+      const testData = await testRes.json();
+
+      if (!testRes.ok) {
+        regexOutput.innerHTML = `
+          <div class="result reject">Gagal simulasi</div>
+          <p>${testData.error}</p>
+        `;
+        return;
+      }
+
+      const accepted = testData.accepted;
+      testResultHtml = `
+        <div class="result ${accepted ? "accept" : "reject"}">
+          ${accepted ? "String Diterima" : "String Ditolak"}
+        </div>
+        <p><b>Test String:</b> ${testString}</p>
+      `;
+    }
+
+    // Format transitions for display
+    let transitionsHtml = "<ul>";
+    for (const [state_symbol, to_states] of Object.entries(nfa.transitions)) {
+      transitionsHtml += `<li><b>${state_symbol}</b> &rarr; {${to_states.join(', ')}}</li>`;
+    }
+    transitionsHtml += "</ul>";
+
+    regexOutput.innerHTML = `
+      <div class="result accept">NFA Berhasil Dibuat</div>
+      <p><b>Regex:</b> ${regex}</p>
+      ${testResultHtml}
+
+      <div class="equivalence-summary">
+        <div class="summary-card"><span>Jumlah States</span><b>${nfa.states.length}</b></div>
+        <div class="summary-card"><span>Start State</span><b>${nfa.start_state}</b></div>
+        <div class="summary-card"><span>Accept States</span><b>${nfa.accept_states.join(', ')}</b></div>
+      </div>
+
+      <h3 class="preview-title">NFA Details</h3>
+      <p><b>States:</b> {${nfa.states.join(', ')}}</p>
+      <p><b>Alphabet:</b> {${nfa.alphabet.join(', ')}}</p>
+      <p><b>Transitions:</b></p>
+      ${transitionsHtml}
+    `;
+
+    // Render static NFA graph
+    const graphData = formatGraphData(nfa);
+    renderStaticGraph("regexStateLayer", "regexTransitionSvg", graphData);
+
+  } catch (error) {
+    regexOutput.innerHTML = `
+      <div class="result reject">Network Error</div>
+      <p>${error.message}</p>
+    `;
+  }
 }
 
 /* DFA MINIMIZATION */
 
-function runMinimize() {
+let currentMinDFAOriginal = null;
+let currentMinDFAMinimized = null;
+
+async function runMinimize() {
   const states = document.getElementById("minStates").value.trim();
   const finalStates = document.getElementById("minFinal").value.trim();
-  const transitions = document.getElementById("minTransitions").value.trim();
+  const transitionsRaw = document.getElementById("minTransitions").value.trim();
+  const outputBox = document.getElementById("minimizeOutput");
 
-  if (states === "" || finalStates === "" || transitions === "") {
-    document.getElementById("minimizeOutput").innerHTML = `
+  if (states === "" || finalStates === "" || transitionsRaw === "") {
+    outputBox.innerHTML = `
       <div class="result reject">Input belum lengkap</div>
       <p>Masukkan states, final states, dan transitions terlebih dahulu.</p>
     `;
     return;
   }
-
-  const stateList = states
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item !== "");
-
-  const finalList = finalStates
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item !== "");
-
-  const nonFinalList = stateList.filter((item) => !finalList.includes(item));
-
-  document.getElementById("minimizeOutput").innerHTML = `
-    <div class="result accept">
-      DFA berhasil diminimalkan
-    </div>
-
-    <h3 class="preview-title">Partisi Awal</h3>
-    <p><b>Non-Final:</b> {${nonFinalList.join(", ")}}</p>
-    <p><b>Final:</b> {${finalList.join(", ")}}</p>
-
-    <h3 class="preview-title">Hasil Minimization</h3>
-    <p><b>Jumlah state sebelum:</b> ${stateList.length}</p>
-    <p><b>Jumlah state sesudah:</b> 2</p>
-
-    <h3 class="preview-title">DFA Minimal Preview</h3>
-
-    <div class="dfa-line">
-      <div class="state-node">A</div>
-      <div class="symbol">0,1</div>
-      <div class="state-node final">B</div>
-    </div>
-
-    <p><b>Catatan:</b> State non-final digabung menjadi A dan state final digabung menjadi B.</p>
+  
+  outputBox.innerHTML = `
+    <div class="result accept">Memproses...</div>
+    <p>Sedang meminimalkan DFA...</p>
   `;
+
+  const stateList = parseListInput(states);
+  const finalList = parseListInput(finalStates);
+  const startState = stateList[0] || "";
+  
+  const parsedTransitions = parseTransitionsInput(transitionsRaw);
+  
+  const alphabetSet = new Set();
+  for (const from in parsedTransitions) {
+    for (const symbol in parsedTransitions[from]) {
+      alphabetSet.add(symbol);
+    }
+  }
+
+  const dfaData = {
+    states: stateList,
+    alphabet: Array.from(alphabetSet),
+    transitions: parsedTransitions,
+    start_state: startState,
+    accept_states: finalList
+  };
+
+  try {
+    const res = await fetch("/api/dfa/minimize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dfaData),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      outputBox.innerHTML = `
+        <div class="result reject">Gagal</div>
+        <p>${data.error}</p>
+      `;
+      return;
+    }
+
+    currentMinDFAOriginal = formatGraphData(dfaData);
+    currentMinDFAMinimized = formatGraphData(data.minimized);
+
+    toggleMinGraph('original');
+
+    outputBox.innerHTML = `
+      <div class="result accept">${data.message}</div>
+      <p><b>Jumlah state sebelum:</b> ${data.original_states}</p>
+      <p><b>Jumlah state sesudah:</b> ${data.minimized_states}</p>
+      
+      <h3 class="preview-title">Langkah Minimisasi</h3>
+      <ul style="padding-left: 20px; line-height: 1.6;">
+        ${data.steps.map(step => {
+          let stepNum = step.step;
+          if (typeof stepNum === 'string' && stepNum.startsWith('3.')) {
+            stepNum = "3 (Iterasi " + stepNum.split('.')[1] + ")";
+          }
+          return `<li><b>Step ${stepNum}:</b> ${step.description}</li>`;
+        }).join('')}
+      </ul>
+    `;
+
+  } catch (error) {
+    outputBox.innerHTML = `
+      <div class="result reject">Network Error</div>
+      <p>${error.message}</p>
+    `;
+  }
+}
+
+function toggleMinGraph(viewType) {
+  const btnOrig = document.getElementById("btnViewOriginal");
+  const btnMin = document.getElementById("btnViewMinimized");
+  
+  if (btnOrig) btnOrig.classList.remove("active");
+  if (btnMin) btnMin.classList.remove("active");
+
+  const canvas = document.getElementById("minGraphCanvas");
+  canvas.style.transition = "opacity 0.2s ease-out";
+  canvas.style.opacity = 0;
+
+  setTimeout(() => {
+    if (viewType === "original") {
+      if (btnOrig) btnOrig.classList.add("active");
+      renderStaticGraph(
+        "minStateLayer",
+        "minTransitionSvg",
+        currentMinDFAOriginal,
+      );
+    } else {
+      if (btnMin) btnMin.classList.add("active");
+      renderStaticGraph(
+        "minStateLayer",
+        "minTransitionSvg",
+        currentMinDFAMinimized,
+      );
+    }
+    canvas.style.opacity = 1;
+  }, 200);
 }
 
 /* DFA EQUIVALENCE */
@@ -880,6 +1004,11 @@ async function runEquivalence() {
       `;
       return;
     }
+
+    // Tampilkan grafis untuk kedua DFA
+    document.getElementById("eqGraphContainer").style.display = "grid";
+    renderStaticGraph("eq1StateLayer", "eq1TransitionSvg", formatGraphData(dfa1));
+    renderStaticGraph("eq2StateLayer", "eq2TransitionSvg", formatGraphData(dfa2));
 
     let pairsHtml = "";
 
@@ -1038,3 +1167,279 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
+/* THEME TOGGLE */
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  const isLight = document.body.classList.contains('light-mode');
+  
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  
+  const btns = document.querySelectorAll('.theme-toggle-btn');
+  btns.forEach(btn => {
+    const icon = btn.querySelector('.icon');
+    const text = btn.querySelector('.theme-text');
+    if (icon) icon.textContent = isLight ? '🌙' : '☀️';
+    if (text) text.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+    const btns = document.querySelectorAll('.theme-toggle-btn');
+    btns.forEach(btn => {
+      const icon = btn.querySelector('.icon');
+      const text = btn.querySelector('.theme-text');
+      if (icon) icon.textContent = '🌙';
+      if (text) text.textContent = 'Dark Mode';
+    });
+  }
+});
+
+/* ZOOM GRAPH */
+let currentZoom = 1;
+function zoomGraph(factor) {
+  currentZoom *= factor;
+  
+  if (currentZoom < 0.3) currentZoom = 0.3;
+  if (currentZoom > 3) currentZoom = 3;
+  
+  const canvas = document.getElementById("graphCanvas");
+  if (canvas) {
+    canvas.style.zoom = currentZoom;
+  }
+}
+
+let currentStaticZooms = {};
+function zoomStaticGraph(canvasId, factor) {
+  if (!currentStaticZooms[canvasId]) currentStaticZooms[canvasId] = 1;
+  currentStaticZooms[canvasId] *= factor;
+  
+  if (currentStaticZooms[canvasId] < 0.3) currentStaticZooms[canvasId] = 0.3;
+  if (currentStaticZooms[canvasId] > 3) currentStaticZooms[canvasId] = 3;
+  
+  const canvas = document.getElementById(canvasId);
+  if (canvas) {
+    canvas.style.zoom = currentStaticZooms[canvasId];
+  }
+}
+
+/* --- STATIC GRAPH RENDERER FOR PROGRAM 2, 3, 4 --- */
+
+function renderStaticGraph(stateLayerId, svgId, graphData) {
+  const stateLayer = document.getElementById(stateLayerId);
+  const svg = document.getElementById(svgId);
+
+  if (!stateLayer || !svg) return;
+
+  stateLayer.innerHTML = "";
+  resetSvg(svg);
+
+  const columns = 6;
+  graphData.states.forEach((state, index) => {
+    if (state.x === undefined || state.y === undefined) {
+      state.x = 100 + (index % columns) * 240;
+      state.y = 260 + Math.floor(index / columns) * 200;
+    }
+  });
+
+  graphData.transitions.forEach((transition, index) => {
+    const fromState = graphData.states.find((s) => s.id === String(transition.from));
+    const toState = graphData.states.find((s) => s.id === String(transition.to));
+
+    if (fromState && toState) {
+      drawStaticTransition(svg, fromState, toState, transition.symbol, index, graphData.transitions);
+    }
+  });
+
+  graphData.states.forEach((state) => {
+    const node = document.createElement("div");
+    
+    let className = "visual-state";
+    if (state.isFinal) className += " final";
+    if (state.isStart) {
+       className += " start-node";
+       node.style.boxShadow = "0 0 0 4px rgba(0, 212, 255, 0.4)";
+    }
+    node.className = className;
+    node.style.cursor = "default";
+
+    node.id = `${stateLayerId}-visual-${state.id}`;
+    node.textContent = state.id;
+    node.style.left = `${state.x}px`;
+    node.style.top = `${state.y}px`;
+
+    stateLayer.appendChild(node);
+  });
+}
+
+function drawStaticTransition(svg, fromState, toState, symbol, transitionIndex, allTransitions) {
+  const fromX = fromState.x + 39;
+  const fromY = fromState.y + 39;
+  const toX = toState.x + 39;
+  const toY = toState.y + 39;
+
+  if (fromState.id === toState.id) {
+    drawStaticLoopTransition(svg, fromX, fromY, symbol, transitionIndex, allTransitions);
+    return;
+  }
+
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  const angle = Math.atan2(dy, dx);
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  const startX = fromX + Math.cos(angle) * 42;
+  const startY = fromY + Math.sin(angle) * 42;
+  const endX = toX - Math.cos(angle) * 46;
+  const endY = toY - Math.sin(angle) * 46;
+
+  const hasReverse = allTransitions.some((item) => {
+    return String(item.from) === String(toState.id) && String(item.to) === String(fromState.id);
+  });
+
+  const sameDirection = allTransitions.filter((item) => {
+    return String(item.from) === String(fromState.id) && String(item.to) === String(toState.id);
+  });
+
+  const sameDirectionIndex = sameDirection.findIndex((item) => {
+    return item.symbol === symbol;
+  });
+
+  let curveOffset = 0;
+
+  if (hasReverse) {
+    curveOffset = -65;
+  } else if (sameDirection.length > 1) {
+    curveOffset = (sameDirectionIndex - (sameDirection.length - 1) / 2) * 40;
+  } else if (distance > 260) {
+    // If it skips a node (distance ~480+), curve it high enough to clear loops
+    curveOffset = -(60 + distance * 0.45); 
+  }
+
+  if (curveOffset !== 0) {
+    drawStaticCurvedTransition(svg, startX, startY, endX, endY, symbol, curveOffset);
+    return;
+  }
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", startX);
+  line.setAttribute("y1", startY);
+  line.setAttribute("x2", endX);
+  line.setAttribute("y2", endY);
+  line.setAttribute("class", "transition-line");
+  line.setAttribute("marker-end", "url(#arrowhead)");
+
+  svg.appendChild(line);
+
+  addStaticTransitionText(svg, (startX + endX) / 2, (startY + endY) / 2 - 8, symbol);
+}
+
+function drawStaticCurvedTransition(svg, startX, startY, endX, endY, symbol, curveOffset) {
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  const normalX = -dy / length;
+  const normalY = dx / length;
+
+  const controlX = midX + normalX * curveOffset;
+  const controlY = midY + normalY * curveOffset;
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+  path.setAttribute("d", `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`);
+  path.setAttribute("class", "transition-line");
+  path.setAttribute("marker-end", "url(#arrowhead)");
+
+  svg.appendChild(path);
+
+  // Text is placed at the peak of the quadratic bezier curve
+  const peakX = midX + normalX * (curveOffset / 2);
+  const peakY = midY + normalY * (curveOffset / 2);
+  addStaticTransitionText(svg, peakX, peakY - 8, symbol);
+}
+
+function drawStaticLoopTransition(svg, x, y, symbol, transitionIndex, allTransitions) {
+  const transition = allTransitions[transitionIndex];
+
+  const loopSymbols = allTransitions
+    .filter((item) => String(item.from) === String(transition.from) && String(item.to) === String(transition.to))
+    .map((item) => item.symbol);
+
+  const firstLoopIndex = allTransitions.findIndex((item) => {
+    return String(item.from) === String(transition.from) && String(item.to) === String(transition.to);
+  });
+
+  if (transitionIndex !== firstLoopIndex) {
+    return;
+  }
+
+  const labelText = loopSymbols.join(",");
+
+  const loopPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  const d = `
+    M ${x} ${y - 38}
+    C ${x - 50} ${y - 100}, ${x + 50} ${y - 100}, ${x} ${y - 38}
+  `;
+
+  loopPath.setAttribute("d", d);
+  loopPath.setAttribute("class", "transition-line");
+  loopPath.setAttribute("marker-end", "url(#arrowhead)");
+
+  svg.appendChild(loopPath);
+
+  addStaticTransitionText(svg, x, y - 90, labelText);
+}
+
+function addStaticTransitionText(svg, x, y, text) {
+  const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  label.setAttribute("x", x);
+  label.setAttribute("y", y);
+  label.setAttribute("text-anchor", "middle");
+  label.setAttribute("class", "transition-label");
+  label.textContent = text;
+  svg.appendChild(label);
+}
+
+function formatGraphData(data) {
+  const states = data.states.map((id) => ({
+    id: String(id),
+    isFinal: data.accept_states.some(a => String(a) === String(id)),
+    isStart: String(id) === String(data.start_state),
+  }));
+
+  const transitionsMap = {};
+  for (const key in data.transitions) {
+    const parts = key.split(",");
+    if (parts.length >= 2) {
+      const from = parts[0];
+      const symbol = parts.slice(1).join(",");
+      const toValue = data.transitions[key];
+      const toArray = Array.isArray(toValue) ? toValue : [toValue];
+
+      toArray.forEach(to => {
+        const tKey = `${from}->${to}`;
+        if (!transitionsMap[tKey]) {
+          transitionsMap[tKey] = { from: String(from), to: String(to), symbols: [] };
+        }
+        if (!transitionsMap[tKey].symbols.includes(symbol)) {
+          transitionsMap[tKey].symbols.push(symbol);
+        }
+      });
+    }
+  }
+
+  const transitions = Object.values(transitionsMap).map(t => ({
+    from: t.from,
+    to: t.to,
+    symbol: t.symbols.join(",")
+  }));
+
+  return { states, transitions };
+}

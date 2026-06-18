@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JAutomata - Program 1 (DFA Simulator)</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <!-- DECORATIVE BACKGROUND -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- NAVBAR -->
+    <div class="sidebar transparent-sidebar program-topbar">
+      <div class="brand highlight-logo">
+        <div class="logo-title">👨‍💻 JAutomata</div>
+        <div class="logo-subtitle">Automata Simulator</div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="page-badge">Program 1: DFA Simulator</div>
+        <a href="/" class="back-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Dashboard
+        </a>
+        <button id="themeToggle" class="theme-toggle-btn" onclick="toggleTheme()">
+          <span class="icon">☀️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="content">
+      <!-- DFA VISUAL SIMULATOR -->
+      <section id="dfa" class="page active-page">
+        <h2>DFA Visual Simulator</h2>
+
+        <div class="visual-layout">
+          <!-- CONTROL PANEL -->
+          <div class="panel tool-panel">
+            <h3>Control Panel</h3>
+
+            <button onclick="addVisualState()">+ Add State</button>
+
+            <label>Alphabet</label>
+            <input
+              id="visualAlphabet"
+              value="a,b"
+              placeholder="Contoh: a,b atau 0,1"
+            />
+
+            <label>Start State</label>
+            <select id="visualStartState"></select>
+
+            <label>Accept States</label>
+            <div id="finalStateList" class="checkbox-list">
+              Belum ada state.
+            </div>
+
+            <hr />
+
+            <h3>Add Transition</h3>
+
+            <label>From</label>
+            <select id="transitionFrom"></select>
+
+            <label>To</label>
+            <select id="transitionTo"></select>
+
+            <label>Symbol</label>
+            <input id="transitionSymbol" placeholder="Contoh: a atau b" />
+
+            <button onclick="addVisualTransition()">Add Transition</button>
+
+            <hr />
+
+            <h3>Test DFA</h3>
+
+            <label>Input String</label>
+            <input id="visualInputString" placeholder="Contoh: aab" />
+
+            <button onclick="runVisualDFA()">Run DFA</button>
+
+            <button class="secondary-btn" onclick="resetVisualDFA()">
+              Reset
+            </button>
+          </div>
+
+          <!-- GRAPH + OUTPUT PANEL -->
+          <div class="panel graph-panel">
+            <div class="graph-header">
+              <h3>DFA Graph Editor</h3>
+              <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomGraph(1.2)">+</button>
+                <button class="zoom-btn" onclick="zoomGraph(0.8)">-</button>
+              </div>
+            </div>
+
+            <div id="graphArea" class="graph-area">
+              <div id="graphCanvas" class="graph-canvas">
+                <svg id="transitionSvg"></svg>
+                <div id="stateLayer"></div>
+              </div>
+            </div>
+
+            <div class="graph-output">
+              <h3>Output</h3>
+
+              <div id="visualDfaOutput" class="output-box">
+                Hasil simulasi akan muncul di sini.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
