@@ -1267,7 +1267,11 @@ function toggleTheme() {
   btns.forEach(btn => {
     const icon = btn.querySelector('.icon');
     const text = btn.querySelector('.theme-text');
-    if (icon) icon.textContent = isLight ? '🌙' : '☀️';
+    if (icon) {
+      icon.innerHTML = isLight 
+        ? '<img src="/static/icons/dark_mode.svg" alt="Dark Mode" width="20" height="20">' 
+        : '<img src="/static/icons/light_mode.svg" alt="Light Mode" width="20" height="20" style="filter: invert(1);">';
+    }
     if (text) text.textContent = isLight ? 'Dark Mode' : 'Light Mode';
   });
 }
@@ -1276,14 +1280,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'light') {
     document.body.classList.add('light-mode');
-    const btns = document.querySelectorAll('.theme-toggle-btn');
-    btns.forEach(btn => {
-      const icon = btn.querySelector('.icon');
-      const text = btn.querySelector('.theme-text');
-      if (icon) icon.textContent = '🌙';
-      if (text) text.textContent = 'Dark Mode';
-    });
   }
+  
+  const isLight = document.body.classList.contains('light-mode');
+  const btns = document.querySelectorAll('.theme-toggle-btn');
+  btns.forEach(btn => {
+    const icon = btn.querySelector('.icon');
+    const text = btn.querySelector('.theme-text');
+    if (icon) {
+      icon.innerHTML = isLight 
+        ? '<img src="/static/icons/dark_mode.svg" alt="Dark Mode" width="20" height="20">' 
+        : '<img src="/static/icons/light_mode.svg" alt="Light Mode" width="20" height="20" style="filter: invert(1);">';
+    }
+    if (text) text.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+  });
 });
 
 /* ZOOM GRAPH */
